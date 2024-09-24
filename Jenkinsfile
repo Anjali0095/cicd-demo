@@ -5,8 +5,8 @@ pipeline {
         NODE_ENV = 'production'
         DEPLOY_USER = 'ubuntu'
         DEPLOY_HOST = '65.2.176.197'
-        DEPLOY_PATH = '/home/ubuntu/jenkins' // Remote path where the app will be deployed
-        SSH_KEY = credentials('creds') // Jenkins credential ID for SSH key
+        DEPLOY_PATH = '/home/ubuntu/cicd-demo' // Remote path where the app will be deployed
+        SSH_KEY = credentials('ssh_key') // Jenkins credential ID for SSH key
     }
 
     stages {
