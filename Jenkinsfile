@@ -28,6 +28,7 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
+                    // Use the SSH key credential for authentication
                     withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
                         // Set permissions for the private key
                         sh 'chmod 600 $SSH_KEY'
