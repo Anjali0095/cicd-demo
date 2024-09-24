@@ -6,7 +6,6 @@ pipeline {
         DEPLOY_USER = 'ubuntu'
         DEPLOY_HOST = '65.2.176.197'
         DEPLOY_PATH = '/home/ubuntu/cicd-demo' // Remote path where the app will be deployed
-        SSH_KEY = credentials('ssh_key') // Jenkins credential ID for SSH key
     }
 
     stages {
@@ -29,16 +28,21 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Copy files to the server
-                    sh """
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
-                        rsync -avz --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
-                    """
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
+                        // Set permissions for the private key
+                        sh 'chmod 600 $SSH_KEY'
 
-                    // Restart the application on the server
-                    sh """
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
-                    """
+                        // Copy files to the server
+                        sh """
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
+                            rsync -avz --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
+                        """
+
+                        // Restart the application on the server
+                        sh """
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
+                        """
+                    }
                 }
             }
         }
