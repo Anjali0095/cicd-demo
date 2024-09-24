@@ -25,6 +25,18 @@ pipeline {
             }
         }
 
+        stage('Debug SSH Connection') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'whoami; ls -la; pwd'
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Deploy to Server') {
             steps {
                 script {
