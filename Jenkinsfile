@@ -49,11 +49,6 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
                         """
 
-                        // Copy files to the server using rsync with explicit SSH
-                        sh """
-                            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i \$SSH_KEY" --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        """
-
                         // Restart the application on the server
                         sh """
                             ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
