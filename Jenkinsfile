@@ -5,7 +5,7 @@ pipeline {
         NODE_ENV = 'production'
         DEPLOY_USER = 'ubuntu'
         DEPLOY_HOST = '65.2.176.197'
-        DEPLOY_PATH = '/home/ubuntu/cicd-demo' // Remote path where the app will be deployed
+        DEPLOY_PATH = '/home/ubuntu/cicd-demo'
     }
 
     stages {
@@ -28,14 +28,17 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Use the SSH key credential for authentication
                     withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
                         // Set permissions for the private key
                         sh 'chmod 600 $SSH_KEY'
 
-                        // Copy files to the server
+                        // Create directory on the server
                         sh """
                             ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
+                        """
+
+                        // Copy files to the server
+                        sh """
                             rsync -avz --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
                         """
 
