@@ -30,7 +30,7 @@ pipeline {
         stage('Debug SSH Connection') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'test', keyFileVariable: 'SSH_KEY')]) {
                         sh """
                             ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'whoami; ls -la; pwd'
                         """
@@ -42,7 +42,7 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'test', keyFileVariable: 'SSH_KEY')]) {
                         // Set permissions for the private key
                         sh 'chmod 600 $SSH_KEY'
 
