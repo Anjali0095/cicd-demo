@@ -5,7 +5,7 @@ pipeline {
     environment {
         NODE_ENV = 'production'
         DEPLOY_USER = 'ubuntu'
-        DEPLOY_HOST = '13.233.232.250'
+        DEPLOY_HOST = '15.206.28.0'
         DEPLOY_PATH = '/home/ubuntu/cicd-demo'
     }
 
@@ -48,12 +48,7 @@ pipeline {
                         // Create directory on the server
                         sh """
                             ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
-                        """
-
-                        // Copy files to the server using rsync with explicit SSH
-                        sh """
-                            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i \$SSH_KEY" --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        """
+                            """
 
                         // Restart the application on the server
                         sh """
