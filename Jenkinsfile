@@ -39,23 +39,20 @@ pipeline {
             }
         }
 
+        
         stage('Deploy to Server') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY', keyFileVariable: 'SSH_KEY')]) {
-                        // Set permissions for the private key
-                        sh 'chmod 600 $SSH_KEY'
+                    // Copy files to the server
+                    sh """
+                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
+                        rsync -avz --delete ./ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}
+                    """
 
-                        // Create directory on the server
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
-                            """
-
-                        // Restart the application on the server
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
-                        """
-                    }
+                    // Restart the application on the server
+                    sh """
+                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
+                    """
                 }
             }
         }
