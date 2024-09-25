@@ -7,7 +7,7 @@ pipeline {
         DEPLOY_USER = 'ubuntu'
         DEPLOY_HOST = '15.206.28.0'
         DEPLOY_PATH = '/home/ubuntu/cicd-demo'
-        SSH_KEY = credentials('github_actions') // Jenkins credential ID for SSH key
+        SSH_KEY = credentials('test') // Jenkins credential ID for SSH key
     }
 
     stages {
