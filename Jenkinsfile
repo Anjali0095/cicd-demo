@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -6,8 +5,9 @@ pipeline {
         NODE_ENV = 'production'
         DEPLOY_USER = 'ubuntu'
         DEPLOY_HOST = '65.2.179.141'
-        DEPLOY_PATH = '/home/ubuntu/cicd-demo'
-        SSH_KEY = credentials('Jenkins') // Jenkins credential ID for SSH key }
+        DEPLOY_PATH = '/home/ubuntu/cicd-demo' // Remote path where the app will be deployed
+        SSH_KEY = credentials('Jenkins') // Jenkins credential ID for SSH key
+    }
 
     stages {
         stage('Install Dependencies') {
@@ -26,46 +26,31 @@ pipeline {
             }
         }
 
-        stage('Debug SSH Connection') {
+        stage('Run Tests') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY', keyFileVariable: 'SSH_KEY')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'whoami; ls -la; pwd'
-                        """
-                    }
+                    sh 'npm test'
                 }
             }
         }
 
-        
-          stage('Deploy to Server') {
+        stage('Deploy to Server') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key', keyFileVariable: 'SSH_KEY')]) {
-                        // Set permissions for the private key
-                        sh 'chmod 600 $SSH_KEY'
+                    // Copy files to the server
+                    sh """
+                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
+                        rsync -avz --delete ./ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}
+                    """
 
-                        // Create directory on the server
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
-                        """
-
-                        // Copy files to the server using rsync with explicit SSH
-                        sh """
-                            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i \$SSH_KEY" --delete ./build/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        """
-
-                        // Restart the application on the server
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
-                        """
-                    }
+                    // Restart the application on the server
+                    sh """
+                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
+                    """
                 }
             }
         }
     }
-
 
     post {
         success {
@@ -76,4 +61,3 @@ pipeline {
         }
     }
 }
-
