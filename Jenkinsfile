@@ -3,17 +3,23 @@ pipeline {
 
     environment {
         NODE_ENV = 'production'
-        DEPLOY_USER = 'ubuntu'
-        DEPLOY_HOST = '13.233.89.13'
-        DEPLOY_PATH = '/home/ubuntu/cicd-demo' // Remote path where the app will be deployed
-        SSH_KEY = credentials('github') // Jenkins credential ID for SSH key
+        DEPLOY_PATH = '/home/ubuntu/cicd-demo'
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                script {
+                    // Specify the branch to checkout
+                    git url: 'https://github.com/Anjali0095/cicd-demo.git', credentialsId: 'github', branch: 'master'
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 script {
-                    sh 'npm install'
+                    sh 'npm ci' // Using npm ci for production
                 }
             }
         }
@@ -29,15 +35,15 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Copy files to the server
-                    sh """
-                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}'
-                        rsync -avz --delete ./ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}
-                    """
+                    // Create the deployment directory if it doesn't exist
+                    sh "mkdir -p ${DEPLOY_PATH}"
 
-                    // Restart the application on the server
+                    // Use rsync to sync build files to the deployment path
+                    sh "rsync -avz --delete ./build/ ${DEPLOY_PATH}/"
+
+                    // Install dependencies and restart the application using pm2
                     sh """
-                        ssh -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_PATH} && npm install && pm2 restart all'
+                        cd ${DEPLOY_PATH} && npm ci && pm2 restart all
                     """
                 }
             }
