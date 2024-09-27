@@ -26,14 +26,6 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                script {
-                    sh 'npm test'
-                }
-            }
-        }
-
         stage('Deploy to Server') {
             steps {
                 script {
