@@ -1,0 +1,61 @@
+name: Deploy React App to Ubuntu EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.17.0'
+
+      - name: Install SSH client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Add SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          AWS_EC2_USER: ${{ secrets.AWS_EC2_USER }}
+          AWS_EC2_HOST: ${{ secrets.AWS_EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
+          # Ensure the deployment directory exists
+          mkdir -p /home/ubuntu/cicd-demo || exit
+          
+          # Change to the deployment directory
+          cd /home/ubuntu/cicd-demo || exit
+
+          # Fix ownership and permissions
+          sudo chown -R $AWS_EC2_USER:$AWS_EC2_USER /home/ubuntu/cicd-demo || exit
+          sudo chmod -R u+rwX /home/ubuntu/cicd-demo || exit
+
+          # Configure Git to handle permissions issues
+          git config --global --add safe.directory /home/ubuntu/cicd-demo || exit
+
+          # Pull the latest code
+          git pull origin master || exit
+
+          # Install dependencies and build the project
+          npm install || exit
+          npm run build || exit
+          pm2 delete react-app
+          pm2 start npm --name "react-app" -- start
+          pm2 restart react-app
+          EOF
